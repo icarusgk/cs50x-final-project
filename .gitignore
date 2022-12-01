@@ -1,0 +1,15 @@
+client/node_modules
+
+# Django #
+*.log
+*.pot
+*.pyc
+__pycache__
+db.sqlite3
+media
+
+client/.env
+api/.env
+env/
+.vscode/
+.obsidian/
