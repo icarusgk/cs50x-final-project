@@ -46,6 +46,17 @@ class LoginView(APIView):
       return Response({ 'message': 'Invalid username or password.' }, status=status.HTTP_400_BAD_REQUEST)
 
 
+class LogoutView(APIView):
+  def post(self, request):
+    response = Response()
+
+    response.delete_cookie('access_token')
+    response.data = { 'message': 'You are logged out' }
+    response.status_code = 200
+    
+    return response
+
+
 class Me(APIView):
   permission_classes = [permissions.IsAuthenticated]
 
