@@ -5,7 +5,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import permissions
 from rest_framework import status
 from django.conf import settings
-from django.middleware import csrf
 
 
 def get_tokens_for_user(user):
@@ -36,8 +35,6 @@ class LoginView(APIView):
         httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
         samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
       )
-
-      csrf.get_token(request)
 
       response.data = { 'message': 'Login successfully' }
       response.status_code = 200
