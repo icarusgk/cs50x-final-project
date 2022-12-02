@@ -64,7 +64,6 @@ ROOT_URLCONF = 'main.urls'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # Include custom authentication class
         'api.auth.CustomAuthentication'
     ],
 }
@@ -164,7 +163,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Danmarkshavn'
 
 USE_I18N = True
 
