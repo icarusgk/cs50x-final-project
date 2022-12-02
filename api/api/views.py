@@ -23,9 +23,7 @@ class LoginView(APIView):
     username = request.data.get('username')
     password = request.data.get('password')
 
-    print(request.data)
-
-    user = authenticate(username=username, password=password)
+    user = authenticate(request, username=username, password=password)
 
     if user is not None:
       tokens = get_tokens_for_user(user)
@@ -33,7 +31,7 @@ class LoginView(APIView):
       response.set_cookie(
         key=settings.SIMPLE_JWT['AUTH_COOKIE'],
         value=tokens['access'],
-        expires=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
+        max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
         secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
         httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
         samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
@@ -45,9 +43,7 @@ class LoginView(APIView):
       response.status_code = 200
       return response
     else:
-      return Response('Invalid username or password.', status.HTTP_400_BAD_REQUEST)
-  
-
+      return Response({ 'message': 'Invalid username or password.' }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class Me(APIView):
@@ -56,6 +52,5 @@ class Me(APIView):
   def get(self, request):
     return Response({
       'user': str(request.user),
-      'auth': str(request.auth)
     })
   

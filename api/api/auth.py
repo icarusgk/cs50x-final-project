@@ -1,18 +1,8 @@
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.authentication import CSRFCheck
 from django.conf import settings
 
-from rest_framework.authentication import CSRFCheck
-from rest_framework import exceptions
-
-
-def enforce_csrf(request):
-  check = CSRFCheck(request)
-  check.process_request(request)
-  reason = check.process_view(request, None, (), {})
-  if reason:
-    raise exceptions.PermissionDenied(f'CSRF Failed: {reason}')
-
-
+# Authenticates the user on each request
 class CustomAuthentication(JWTAuthentication):
   def authenticate(self, request):
     header = self.get_header(request)
@@ -24,8 +14,7 @@ class CustomAuthentication(JWTAuthentication):
     
     if raw_token is None:
       return None
-
     
     validated_token = self.get_validated_token(raw_token)
-    enforce_csrf(request)
+    CSRFCheck(request)
     return self.get_user(validated_token), validated_token
