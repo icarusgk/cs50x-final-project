@@ -29,4 +29,4 @@ jobs:
         dotenv set SECRET_KEY ${{ secrets.SECRET_KEY }}
     - name: Run Tests
       run: |
-        python manage.py test
+        python api/manage.py test
