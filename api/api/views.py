@@ -1,8 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from rest_framework import serializers
-from api.models import WorkSpace
+from api.serializers import WorkSpaceSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import permissions
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
@@ -65,11 +64,6 @@ class CookieRefreshTokenView(TokenRefreshView):
     return super().finalize_response(request, response, *args, **kwargs)
   serializer_class = CookieRefreshTokenSerializer
 
-
-class WorkSpaceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WorkSpace
-        fields = ['id', 'name']
 
 
 class WorkSpace(ModelViewSet):
