@@ -7,7 +7,7 @@ export default defineNuxtConfig({
       autoImports: ['defineStore', 'acceptHMRUpdate']
     }],
     '@vueuse/nuxt',
-    "@formkit/nuxt"
+    '@formkit/nuxt',
   ],
   imports: {
     dirs: ['stores']
