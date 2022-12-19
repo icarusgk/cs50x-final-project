@@ -116,6 +116,7 @@ const renameWorkspace = async () => {
         <div v-if="newBoard.opened" class="flex flex-col w-80 p-4 rounded-md mr-4 bg-slate-200 dark:bg-gray-800">
           <input
             v-model="newBoard.name"
+            @keyup.enter="addBoard"
             type="text" placeholder="Name" class="input input-sm w-full max-w-xs my-3"
           />
           <div class="flex gap-4 justify-end">

@@ -9,10 +9,10 @@ class TokenRefreshMiddleware:
     response = self.get_response(request)
     refresh_token = request.session.get('refresh')
 
-    login_route = '/api/auth/login/'
+    excluded_routes = ['/api/auth/login/', '/api/auth/register/']
     
     # Use this middleware everywhere except the login route
-    if request.path != login_route:
+    if request.path not in excluded_routes:
       # Check if the refresh token is still valid
       try:
         # Set the new set of tokens based on the refresh token

@@ -5,19 +5,31 @@ const form = reactive({
   passwordConfirmation: ''
 });
 
-const { public: { API_BASE } } = useRuntimeConfig();
+const { public: { baseURL } } = useRuntimeConfig();
 
-async function handleRegister() {
-  const response = await $fetch.raw('auth/register/', {
-    method: 'POST',
-    body: form,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    baseURL: API_BASE
-  });
-  // TODO: Alert the user of successful registration
-  // with the alert store
+const alert = useAlertStore();
+const auth = useAuthStore();
+
+async function handleRegister() { 
+  if (form.password === form.passwordConfirmation) {
+    try {
+      const response = await $fetch.raw('auth/register/', {
+        method: 'POST',
+        body: form,
+        baseURL,
+      });
+
+      if (response.ok) {
+        alert.success('Registered successfully');
+        auth.user = form.username;
+        await auth.login({ username: form.username, password: form.password });
+      }
+    } catch (e) {
+      alert.error(`There was an error registering you: ${e}`);
+    }
+  } else {
+    alert.error("Your password doesn't match with your password confirmation");
+  }
 }
 </script>
 

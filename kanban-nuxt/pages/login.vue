@@ -8,7 +8,6 @@ const auth = useAuthStore();
 const alert = useAlertStore();
 const router = useRouter();
 
-
 async function handleLogin() {
   try {
     const response = await $fetch.raw('http://127.0.0.1:8000/api/auth/login/', {
@@ -18,10 +17,17 @@ async function handleLogin() {
     });
     if (response.ok) {
       auth.isAuthed = true;
+      // After logging in, retrieve the user
+      const res = await $fetch.raw<{ user: string }>('http://127.0.0.1:8000/api/me/', {
+        credentials: 'include',
+      });
+
+      // Set the user when logged in
+      auth.user = res._data?.user;
     }
     router.push("/");
   } catch (e) {
-    alert.error(`${e}`);
+    alert.error("The username or password is incorrect");
   }
 }
 </script>

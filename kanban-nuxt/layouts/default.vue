@@ -6,6 +6,15 @@ const { public: { baseURL } } = useRuntimeConfig();
 const auth = useAuthStore();
 const alert = useAlertStore();
 
+// useAsyncData
+const { data } = await useAsyncData('user', () => $fetch('me/', {
+  baseURL,
+  headers,
+  credentials: 'include',
+}));
+
+if (auth.isAuthed) auth.user = data.value.user;
+
 async function handleLogout() {
   const response = await $fetch.raw('auth/logout/', {
     method: 'POST',
@@ -34,7 +43,7 @@ async function handleLogout() {
         <button @click="$router.push('/register')" class="btn btn-accent">Register</button>
       </div>
       <div class="fixed right-5 top-6" v-else>
-        <!-- <span class="mr-4">Logged in as <span class="font-bold">{{ auth.user.user }}</span></span> -->
+        <span class="mr-4 invisible sm:visible">Logged in as <span class="font-bold">{{ auth.user }}</span></span>
         <button @click="handleLogout" class="btn btn-error">Log out</button>
       </div>
     </div>

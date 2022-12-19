@@ -76,19 +76,21 @@ function deleteCard(cardID: number) {
 async function deleteBoard() {
   const id = props.board.id;
   
-  try {
-    const res = await $fetch.raw(`boards/${id}/`, {
-      method: "DELETE",
-      credentials: "include",
-      baseURL
-    });
+  if (window.confirm('Are you sure?')) {
+    try {
+      const res = await $fetch.raw(`boards/${id}/`, {
+        method: "DELETE",
+        credentials: "include",
+        baseURL
+      });
 
-    if (res.status === 204) {
-      alert.success('Board successfully deleted');
-      emit('deleteBoard', id);
+      if (res.status === 204) {
+        alert.success('Board successfully deleted');
+        emit('deleteBoard', id);
+      }
+    } catch (e) {
+      alert.error(`There was an error deleting the board: ${e}`);
     }
-  } catch (e) {
-    alert.error(`There was an error deleting the board: ${e}`);
   }
 }
 
