@@ -14,7 +14,12 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      API_BASE: 'http://127.0.0.1:8000/api/'
+      baseURL: 'http://127.0.0.1:8000/api/'
+    }
+  },
+  vite: {
+    ssr: {
+      noExternal: ['vue3-popper']
     }
   }
 })

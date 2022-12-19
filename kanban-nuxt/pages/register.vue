@@ -5,13 +5,16 @@ const form = reactive({
   passwordConfirmation: ''
 });
 
+const { public: { API_BASE } } = useRuntimeConfig();
+
 async function handleRegister() {
-  const response = await $fetch.raw('http://127.0.0.1:8000/api/auth/register/', {
+  const response = await $fetch.raw('auth/register/', {
     method: 'POST',
     body: form,
     headers: {
       'Content-Type': 'application/json'
-    }
+    },
+    baseURL: API_BASE
   });
   // TODO: Alert the user of successful registration
   // with the alert store
@@ -19,7 +22,7 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="flex flex-col h-max items-center mt-20 2xl:mt-48">
+  <div class="flex flex-col h-max items-center mt-20 2xl:mt-32">
     <!-- Title -->
     <span class="text-3xl font-bold mb-5">Register</span>
     <!-- Form -->

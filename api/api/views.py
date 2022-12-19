@@ -1,35 +1,13 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from api.serializers import WorkSpaceSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
+from api.models import WorkSpace
+from api.serializers import *
 from rest_framework import permissions
-from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from rest_framework_simplejwt.exceptions import InvalidToken
-from django.contrib.auth.models import User
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status
-
-def get_tokens_for_user(user):
-  refresh = RefreshToken.for_user(user)
-  return {
-    'refresh': str(refresh),
-    'access': str(refresh.access_token)
-  }
-
-
-# The http-only refresh token serializer that includes the
-# refresh token when trying to refresh
-class CookieRefreshTokenSerializer(TokenRefreshSerializer):
-  refresh = None
-  def validate(self, attrs):
-    # Get the refresh token from the request session
-    # and set the 'refresh' key in attrs to it
-    attrs['refresh'] = self.context['request'].session.get('refresh')
-    if attrs['refresh']:
-      return super().validate(attrs)
-    else:
-      raise InvalidToken('No valid token found in cookie \'refresh_token\'')
+from rest_framework.decorators import action
+from django.contrib.auth.models import User
 
 
 # The user's login
@@ -38,40 +16,98 @@ class CookieObtainTokenPairView(TokenObtainPairView):
     # Check for the 'refresh' key from the response
     if response.data.get('refresh'):
       # 1 day
-      access_max_age = 3600 * 24 * 7
-      response.set_cookie('access_token', response.data['access'], max_age=access_max_age, httponly=True, samesite='None', secure=True)
+      # access_max_age = 3600 * 24 * 7
+      # Set the cookie
+      response.set_cookie('access_token', response.data['access'], max_age=604800, httponly=True, samesite='None', secure=True)
+
+      # Set the session token
       request.session['refresh'] = response.data['refresh']
 
+      # Add a message to the response
       response.data['message'] = 'Successfully logged in!'
 
       # Remove the tokens from the JSON response
       del response.data['access']
       del response.data['refresh']
+      # Call the super method
     return super().finalize_response(request, response, *args, **kwargs)
 
 
-# Refreshes the user's access_token
-class CookieRefreshTokenView(TokenRefreshView):
-  def finalize_response(self, request, response, *args, **kwargs):
-    if response.data.get('access'):
-      
-      # 1 day
-      access_max_age = 3600 * 24 * 7
-      response.set_cookie('access_token', response.data['access'], max_age=access_max_age, httponly=True, samesite='None', secure=True)
-      response.data['message'] = 'Token refreshed!'
-      # Remove the tokens from the JSON response
-      del response.data['access']
-    return super().finalize_response(request, response, *args, **kwargs)
-  serializer_class = CookieRefreshTokenSerializer
 
-
-
-class WorkSpace(ModelViewSet):
+class WorkSpaceView(ModelViewSet):
   permission_classes = [permissions.IsAuthenticated]
   serializer_class = WorkSpaceSerializer
 
   def get_queryset(self):
     return self.request.user.workspaces
+  
+  # Return the boards
+  def retrieve(self, request, pk=None):
+    ws = self.get_object()
+    return Response({
+      "name": ws.name,
+      "boards": BoardSerializer(ws.boards.all(), many=True).data
+    })
+
+  # Include the user on workspace creation
+  def perform_create(self, serializer):
+    serializer.save(user=self.request.user)
+
+
+
+class BoardView(ModelViewSet):
+  queryset = Board.objects.all()
+  permission_classes = [permissions.IsAuthenticated]
+  serializer_class = BoardSerializer
+
+  # Return none cards (for now)
+  def get_queryset(self):
+    return self.request.user.boards
+
+  # Assign the workspace to the board
+  def perform_create(self, serializer):
+    print(self.request.data.get('workspace'))
+    ws = WorkSpace.objects.get(id=self.request.data.get('workspace'))
+    serializer.save(workspace=ws, user=self.request.user)
+
+  def destroy(self, request, pk=None):
+    try:
+      board = Board.objects.get(id=int(pk), user=request.user)
+      board.delete()
+      # Delete the board
+      return Response(status=204)
+    except:
+      return Response({
+        'message': 'You are not authorized to delete this'
+      }, status=status.HTTP_403_FORBIDDEN)
+      
+
+
+class CardView(ModelViewSet):
+  queryset = Card.objects.all()
+  permission_classes = [permissions.IsAuthenticated]
+  serializer_class = CardSerializer
+
+  def get_queryset(self):
+    return self.request.user.cards
+
+  def perform_create(self, serializer):
+    board = Board.objects.get(id=self.request.data.get('board'), user=self.request.user)
+    serializer.save(board=board, user=self.request.user)
+
+  
+  @action(detail=True, methods=['PATCH'])
+  def move(self, request, pk=None):
+    to_board_id = request.data['to']
+    card = Card.objects.filter(id=pk).first()
+    new_board = Board.objects.filter(id=to_board_id).first()
+
+    card.board = new_board
+    card.save()
+
+    return Response({ "message": f"Moved to Board '{new_board.name}'" })
+
+
 
 
 class RegisterView(APIView):
@@ -96,19 +132,24 @@ class RegisterView(APIView):
       return Response({'message': 'error creating user'}, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
-  permission_classes = [permissions.IsAuthenticated]
-
   def post(self, request):
     response = Response()
 
-    # Delete the token and the session
-    response.delete_cookie('access_token')
+    # Check if the user is logged in
+    if request.COOKIES.get('sessionid'):
+      # Delete the token and the session
+      response.delete_cookie('access_token')
+      response.delete_cookie('sessionid')
 
-    response.delete_cookie('sessionid')
-    request.session = {}
+      # Delete the refresh token from the session
+      request.session = {}
 
-    response.data = { 'message': 'You are logged out' }
-    response.status_code = 200
+      response.data = { 'message': 'You are logged out' }
+      response.status_code = 200
+    else:
+      # If user is not logged in
+      response.data = { 'message': 'You are not logged in' }
+      response.status_code = 401
     return response
 
 

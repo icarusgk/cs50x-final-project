@@ -5,14 +5,29 @@ const form = reactive({
 });
 
 const auth = useAuthStore();
+const alert = useAlertStore();
+const router = useRouter();
+
 
 async function handleLogin() {
-  await auth.login(form);
+  try {
+    const response = await $fetch.raw('http://127.0.0.1:8000/api/auth/login/', {
+      method: 'POST',
+      credentials: 'include',
+      body: form,
+    });
+    if (response.ok) {
+      auth.isAuthed = true;
+    }
+    router.push("/");
+  } catch (e) {
+    alert.error(`${e}`);
+  }
 }
 </script>
 
 <template>
-  <div class="flex flex-col h-max items-center mt-20 2xl:mt-48">
+  <div class="flex flex-col h-max items-center mt-20 2xl:mt-32">
     <!-- Title -->
     <span class="text-3xl font-bold mb-5">Login</span>
     <!-- Form -->
