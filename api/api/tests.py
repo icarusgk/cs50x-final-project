@@ -14,9 +14,10 @@ class TestUserAuth(TestCase):
     
 
   def test_user_login(self):
-    response = self.c.post('/api/auth/login', self.user)
+    response = self.c.post('/api/auth/login/', self.user)
     # Assert response
-    self.assertContains(response, status_code=200, text="{}")
+    self.assertEqual(response.status_code, 200)
+    # self.assertContains(response, status_code=200, text="{}")
 
     # Test access token and session id
     self.assertTrue(response.cookies.get('access_token'))
@@ -28,7 +29,7 @@ class TestUserAuth(TestCase):
     self.test_user_login()
     expected_message = { 'message': 'You are logged out' }
     
-    response = self.c.post('/api/auth/logout')
+    response = self.c.post('/api/auth/logout/')
     self.assertEqual(response.status_code, 200)
     self.assertEqual(response.json(), expected_message)
     

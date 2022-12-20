@@ -1,9 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  // console.log(to.name);
-  const headers = useRequestHeaders();
-  // @ts-ignore
-  const data = await $fetch('/api/isAuthed', { headers });
-  if (data) {
+  const headers = useRequestHeaders(['cookie']);  
+  
+  if (Object.keys(headers)?.length !== 0) {
     if (to.name === 'login' || to.name === 'register') {
       return navigateTo('/');
     }

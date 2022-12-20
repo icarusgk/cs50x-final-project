@@ -1,10 +1,4 @@
 <script setup>
-const headers = useRequestHeaders();
-const auth = useAuthStore();
-
-const { data: isAuthed } = await useFetch('/api/isAuthed', { headers });
-auth.isAuthed = isAuthed;
-
 useHead({
   title: 'CS50x KanBan'
 });

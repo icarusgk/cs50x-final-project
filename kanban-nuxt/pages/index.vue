@@ -2,8 +2,6 @@
 const headers = useRequestHeaders(['cookie']);
 const { public: { baseURL } } = useRuntimeConfig();
 
-const { data: isAuthed, refresh: refreshAuthed } = await useFetch('/api/isAuthed', { headers });
-
 const { data: workspaces } = await useFetch('workspaces/', {
   baseURL,
   credentials: 'include',
@@ -11,6 +9,8 @@ const { data: workspaces } = await useFetch('workspaces/', {
 });
 
 const auth = useAuthStore();
+
+if (headers.cookie) auth.isAuthed = true;
 
 const newWorkspace = reactive({
   name: "",
@@ -96,7 +96,7 @@ async function deleteWorkspace(id) {
         <div>
           <div v-if="!newWorkspace.open" @click="newWorkspace.open = true" class="flex items-center justify-center h-full btn btn-success">
             <Icon name="carbon:add-alt" />
-            <span class="ml-2" v-if="workspaces.length === 0">Add a new workspace</span>
+            <span class="ml-2" v-if="!workspaces">Add a new workspace</span>
           </div>
           <!-- New workspace form -->
           <div class="p-6 w-72 h-full bg-base-100 shadow-xl rounded-xl flex flex-col" v-else>

@@ -9,7 +9,7 @@ class TokenRefreshMiddleware:
     response = self.get_response(request)
     refresh_token = request.session.get('refresh')
 
-    excluded_routes = ['/api/auth/login/', '/api/auth/register/']
+    excluded_routes = ['/api/auth/login/', '/api/auth/register/', '/api/auth/logout/']
     
     # Use this middleware everywhere except the login route
     if request.path not in excluded_routes:

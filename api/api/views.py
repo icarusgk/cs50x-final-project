@@ -1,24 +1,29 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from api.models import WorkSpace
+from api.models import *
 from api.serializers import *
-from rest_framework import permissions
+from rest_framework import permissions, status
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import status
 from rest_framework.decorators import action
 from django.contrib.auth.models import User
+from django.conf import settings
 
 
-# The user's login
+# The user's login, it inherits from TokenObtainPairView
 class CookieObtainTokenPairView(TokenObtainPairView):
   def finalize_response(self, request, response, *args, **kwargs):
+    """
+    Customize the response of the JWT tokens
+
+    So that instead of returning the tokens in the response
+    the access token is set as a cookie and the refresh token
+    is stored in the user session.
+    """
     # Check for the 'refresh' key from the response
     if response.data.get('refresh'):
-      # 1 day
-      # access_max_age = 3600 * 24 * 7
       # Set the cookie
-      response.set_cookie('access_token', response.data['access'], max_age=604800, httponly=True, samesite='None', secure=True)
+      response.set_cookie('access_token', response.data['access'], max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'], httponly=True, samesite='None', secure=True)
 
       # Set the session token
       request.session['refresh'] = response.data['refresh']
@@ -39,10 +44,16 @@ class WorkSpaceView(ModelViewSet):
   serializer_class = WorkSpaceSerializer
 
   def get_queryset(self):
+    """
+    Return the current user's workspaces
+    """
     return self.request.user.workspaces
   
-  # Return the boards
   def retrieve(self, request, pk=None):
+    """
+    Customizes the response so that it includes the
+    name of the workspace as well as the boards
+    """
     ws = self.get_object()
     return Response({
       "name": ws.name,
@@ -60,17 +71,25 @@ class BoardView(ModelViewSet):
   permission_classes = [permissions.IsAuthenticated]
   serializer_class = BoardSerializer
 
-  # Return none cards (for now)
   def get_queryset(self):
+    """
+    Return the current user's boards
+    """
     return self.request.user.boards
 
-  # Assign the workspace to the board
   def perform_create(self, serializer):
-    print(self.request.data.get('workspace'))
+    """
+    Customize the creation of the board so that
+    it includes the workspace and the user
+    """
     ws = WorkSpace.objects.get(id=self.request.data.get('workspace'))
     serializer.save(workspace=ws, user=self.request.user)
 
   def destroy(self, request, pk=None):
+    """
+    Deletes the board with id of pk from 
+    the current user
+    """
     try:
       board = Board.objects.get(id=int(pk), user=request.user)
       board.delete()
@@ -89,6 +108,9 @@ class CardView(ModelViewSet):
   serializer_class = CardSerializer
 
   def get_queryset(self):
+    """
+    Return the current user's cards
+    """
     return self.request.user.cards
 
   def perform_create(self, serializer):
@@ -98,6 +120,12 @@ class CardView(ModelViewSet):
   
   @action(detail=True, methods=['PATCH'])
   def move(self, request, pk=None):
+    """
+    Uses the PATCH verb under the path of
+    /api/cards/<pk>/move/
+    to move the card with id of pk from its current board
+    to the board of id of request.data['to']
+    """
     to_board_id = request.data['to']
     card = Card.objects.filter(id=pk).first()
     new_board = Board.objects.filter(id=to_board_id).first()
@@ -109,13 +137,11 @@ class CardView(ModelViewSet):
 
 
 
-
 class RegisterView(APIView):
     """
     Register an user with an username and password
     """
     def post(self, request):
-      print(request.data)
       username = request.data['username']
       password = request.data['password']
       confirmation = request.data['passwordConfirmation']
@@ -133,6 +159,10 @@ class RegisterView(APIView):
 
 class LogoutView(APIView):
   def post(self, request):
+    """
+    Logs out the user and deletes the cookies
+    from the client
+    """
     response = Response()
 
     # Check if the user is logged in
@@ -149,7 +179,7 @@ class LogoutView(APIView):
     else:
       # If user is not logged in
       response.data = { 'message': 'You are not logged in' }
-      response.status_code = 401
+      response.status_code = 200
     return response
 
 
@@ -158,6 +188,7 @@ class Me(APIView):
   permission_classes = [permissions.IsAuthenticated]
 
   def get(self, request):
+    # Returns the current user username
     return Response({
       'user': str(request.user)
     })

@@ -7,13 +7,20 @@ const auth = useAuthStore();
 const alert = useAlertStore();
 
 // useAsyncData
-const { data } = await useAsyncData('user', () => $fetch('me/', {
+const { data, error } = await useAsyncData('user', () => $fetch('me/', {
   baseURL,
   headers,
   credentials: 'include',
 }));
 
-if (auth.isAuthed) auth.user = data.value.user;
+// When the refresh token on the server expires
+if (!error.value?.message.includes('401')) {
+  auth.isAuthed = true;
+} else if (!headers.cookie?.includes('access_token') && auth.isAuthed) {
+  handleLogout();
+}
+
+if (auth.isAuthed) auth.user = data.value?.user;
 
 async function handleLogout() {
   const response = await $fetch.raw('auth/logout/', {

@@ -12,7 +12,6 @@ const { public: { baseURL } } = useRuntimeConfig();
 
 const alert = useAlertStore();
 
-
 const newCard = reactive({
   body: {
     name: '',
@@ -108,6 +107,7 @@ async function renameBoard() {
 
       if (res.status === 200) {
         alert.success(`Board renamed to '${renamedBoard}'`);
+        props.board.name = renamedBoard;
         renamedBoard = "";
       }
     } catch (e) {
